@@ -182,7 +182,7 @@ class rrulebase(object):
     # __len__() introduces a large performance penalty.
     def count(self):
         """ Returns the number of recurrences in this set. It will have go
-            through the whole recurrence, if this hasn't been done before. """
+            trough the whole recurrence, if this hasn't been done before. """
         if self._len is None:
             for x in self:
                 pass
@@ -704,10 +704,11 @@ class rrule(rrulebase):
         dateutil-specific extension BYEASTER.
         """
 
+        
         output = []
         h, m, s = [None] * 3
         if self._dtstart:
-            output.append(self._dtstart.strftime('DTSTART:%Y%m%dT%H%M%S'))
+            output.append('DTSTART:{}'.format(self._datetime_str(self._dtstart)))
             h, m, s = self._dtstart.timetuple()[3:6]
 
         parts = ['FREQ=' + FREQNAMES[self._freq]]
@@ -721,7 +722,7 @@ class rrule(rrulebase):
             parts.append('COUNT=' + str(self._count))
 
         if self._until:
-            parts.append(self._until.strftime('UNTIL=%Y%m%dT%H%M%S'))
+            parts.append('UNTIL={}'.format(self._datetime_str(self._until)))
 
         if self._original_rule.get('byweekday') is not None:
             # The str() method on weekday objects doesn't generate
@@ -758,6 +759,14 @@ class rrule(rrulebase):
 
         output.append('RRULE:' + ';'.join(parts))
         return '\n'.join(output)
+
+    def _datetime_str(self, dt: datetime):
+        """Format timezone-aware datetimes with UTC offset suffix, otherwise naive datetime string"""
+        if dt.tzinfo:
+            from . import tz
+            utc = tz.gettz('UTC')
+            return dt.astimezone(utc).strftime('%Y%m%dT%H%M%SZ')
+        return dt.strftime('%Y%m%dT%H%M%S')
 
     def replace(self, **kwargs):
         """Return new rrule with same attributes except for those attributes given new
